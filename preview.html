@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>🔁 Preview | Techlystb</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      background: #111; color: #fff; font-family: sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh; padding: 20px;
+    }
+    iframe {
+      width: 100%; max-width: 600px; height: 300px;
+      border: none; border-radius: 8px; margin-bottom: 20px;
+    }
+    .timer-box {
+      font-size: 20px; background: #222; padding: 10px 20px;
+      border-radius: 8px; margin-bottom: 20px;
+    }
+    .done-btn {
+      display: none;
+      background: #28a745; color: #fff; padding: 12px 25px;
+      border: none; border-radius: 6px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h2>🔁 Website Preview চলছে...</h2>
+<div class="timer-box">⏳ Please wait: <span id="timer">30</span>s</div>
+<iframe id="frame" src=""></iframe>
+<button class="done-btn" onclick="finishPreview()">✅ Done - Go Back</button>
+
+<script>
+const urlParams = new URLSearchParams(location.search);
+const link = urlParams.get('link');
+const time = parseInt(urlParams.get('t') || '30');
+
+let countdown = time;
+const frame = document.getElementById('frame');
+const timerText = document.getElementById('timer');
+const doneBtn = document.querySelector('.done-btn');
+
+if (!link) {
+  document.body.innerHTML = '<h3>❌ Invalid preview link!</h3>';
+} else {
+  frame.src = link;
+  const interval = setInterval(() => {
+    countdown--;
+    timerText.innerText = countdown;
+    if (countdown <= 0) {
+      clearInterval(interval);
+      doneBtn.style.display = 'block';
+    }
+  }, 1000);
+}
+
+function finishPreview() {
+  let key = localStorage.getItem("pendingKey");
+  let coin = parseInt(localStorage.getItem("pendingCoin") || "0");
+  let redirect = localStorage.getItem("redirectBack") || "/";
+  if (key && coin) {
+    // ✅ Add Coin
+    let total = parseInt(localStorage.getItem("coin") || "0");
+    localStorage.setItem("coin", total + coin);
+
+    // 🧠 Update history
+    let h = JSON.parse(localStorage.getItem("history") || "[]");
+    h.unshift(`${key} +${coin} coins (Preview ${new Date().toLocaleString()})`);
+    localStorage.setItem("history", JSON.stringify(h));
+
+    // 🕒 Mark as done
+    let earned = JSON.parse(localStorage.getItem("earned") || "{}");
+    earned[key] = Date.now();
+    localStorage.setItem("earned", JSON.stringify(earned));
+  }
+
+  // 🧹 Clear temporary
+  localStorage.removeItem("pendingKey");
+  localStorage.removeItem("pendingCoin");
+
+  // 🔙 Redirect back
+  location.href = redirect;
+}
+</script>
+
+</body>
+</html>
