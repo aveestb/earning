@@ -191,7 +191,8 @@ function redirectWithTimer(key, coin, url) {
   localStorage.setItem("pendingKey", key);
   localStorage.setItem("pendingCoin", coin);
   localStorage.setItem("redirectBack", location.href);
-  location.href = `https://aveestb-bd.blogspot.com/p/preview_24.html?link=${encodeURIComponent(url)}&t=30`;
+ location.href = `preview.html?link=${encodeURIComponent(url)}&t=30`;
+
 }
 
 // ✅ Auto Preview System
