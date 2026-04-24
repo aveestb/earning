@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>🔁 Preview | Techlystb</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- 🌟 Earn Page Layout -->
+<style>
+body { background: #111; color: #fff; font-family: sans-serif; margin: 0; padding: 20px; }
+.step { display: none; background: #1c1c1c; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+.step.active { display: block; }
+input, select, textarea, button {
+  width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 6px;
+  background: #222; color: #fff; font-size: 16px;
+}
+button { background: #fa0272; font-weight: bold; cursor: pointer; }
+button:hover { background: #c10059; }
+ul li { list-style: none; background: #222; margin: 6px 0; padding: 8px; border-radius: 6px; }
+h2 { color: #fa0272; }
+iframe { width: 100%; height: 300px; border: none; border-radius: 8px; margin: 10px 0; }
+</style>
+
+
+
+
+
+
+<!-- ✅ Step 1: Registration/Login -->
+<div class="step active" id="step1">
+  <h2>📝 রেজিস্ট্রেশন</h2>
+  <input id="reg-username" placeholder="Username" />
+  <input id="reg-email" placeholder="Email" />
+  <input id="reg-phone" placeholder="Phone Number" />
+  <input id="reg-password" type="password" placeholder="Password" />
+  <button onclick="registerUser()">✅ Register</button>
+  <hr />
+  <h2>🔐 Login</h2>
+  <input id="login-email" placeholder="Email" />
+  <input id="login-password" type="password" />
+  <button onclick="loginUser()">➡️ Login</button>
+</div>
+
+<!-- ✅ Step 2: Earn Coins -->
+<div class="step" id="step2">
+  <h2>🎯 Earn Coins</h2>
+  <p>Total Coins: <span id="total-coins">0</span></p>
+  <button onclick="earn('bonus', 100, 'daily')">🎁 Daily Bonus</button>
+  <button onclick="startAutoPreview()">▶️ Auto Preview (50 Coins)</button>
+
+  <!-- 🔗 Download Buttons with custom links -->
+  <button onclick="redirectWithTimer('dl1', 100, 'https://example.com/1')">📥 Download 1</button>
+  <button onclick="redirectWithTimer('dl2', 100, 'https://example.com/2')">📥 Download 2</button>
+  <button onclick="redirectWithTimer('dl3', 100, 'https://example.com/3')">📥 Download 3</button>
+  <button onclick="redirectWithTimer('dl4', 100, 'https://example.com/4')">📥 Download 4</button>
+  <button onclick="redirectWithTimer('dl5', 100, 'https://example.com/5')">📥 Download 5</button>
+
+  <button onclick="goStep(3)">➡️ View History</button>
+</div>
+
+<!-- ✅ Step 3: History -->
+<div class="step" id="step3">
+  <h2>📜 Coin History</h2>
+  <p>Total Coins: <span id="total-coins2">0</span></p>
+  <ul id="history"></ul>
+  <button onclick="goStep(4)">💳 Withdraw</button>
+  <button onclick="goStep(2)">↩️ Back</button>
+</div>
+
+<!-- ✅ Step 4: Withdraw -->
+<div class="step" id="step4">
+  <h2>💵 Withdraw</h2>
+  <select id="method">
+    <option value="bkash">bKash</option>
+    <option value="nagad">Nagad</option>
+  </select>
+  <input id="wphone" placeholder="Phone Number" />
+  <input id="amount" placeholder="Amount (min 1000 coins)" />
+  <textarea id="wcomment" placeholder="Comment (optional)"></textarea>
+  <button onclick="requestWithdraw()">📤 Request via WhatsApp</button>
+  <ul id="withdrawHistory"></ul>
+  <button onclick="goStep(3)">↩️ Back</button>
+</div>
+
+<!-- ✅ Step 5: Auto Preview -->
+<div class="step" id="previewStep">
+  <h2>🔁 Auto Preview চলছে...</h2>
+  <p>⏳ Wait: <span id="previewTimer">30</span> sec</p>
+  <iframe id="previewFrame"></iframe>
+  <button onclick="goStep(2)">⬅️ Back to Earn</button>
+</div>
+
+
+
+<script>
+let user = {};
+let previewIndex = 0;
+let previewLinks = [
+  "https://example.com/page1",
+  "https://example.com/page2",
+  "https://example.com/page3"
+];
+let previewTime = 30; // প্রতি লিংকে সময়
+
+function goStep(n) {
+  document.querySelectorAll(".step").forEach((el, i) => {
+    el.classList.remove("active");
+    if (i === n - 1) el.classList.add("active");
+  });
+}
+
+function reg(id) { return document.getElementById(id).value.trim(); }
+function gid(id) { return document.getElementById(id); }
+
+function registerUser() {
+  let u = reg("reg-username"), e = reg("reg-email"), p = reg("reg-password"), ph = reg("reg-phone");
+  if (!u || !e || !p || !ph) return alert("⚠️ সব ঘর পূরণ করুন!");
+  let used = JSON.parse(localStorage.getItem("used") || "[]");
+  if (used.includes(e) || used.includes(ph)) return alert("❌ আগে ব্যবহার করা হয়েছে!");
+  used.push(e, ph);
+  localStorage.setItem("used", JSON.stringify(used));
+  localStorage.setItem("regUser", JSON.stringify({ u, e, p, ph }));
+  alert("✅ রেজিস্ট্রেশন সফল! এখন লগইন করুন।");
+}
+
+function loginUser() {
+  let e = reg("login-email"), p = reg("login-password");
+  let r = JSON.parse(localStorage.getItem("regUser") || "{}");
+  if (e === r.e && p === r.p) {
+    localStorage.setItem("user", JSON.stringify(r));
+    user = r;
+    goStep(2);
+    updateTotalCoins();
+    showHistory();
+    showWithdrawHistory();
+  } else alert("❌ ভুল তথ্য!");
+}
+
+function earn(key, coin, type) {
+  let earned = JSON.parse(localStorage.getItem("earned") || "{}");
+  let last = earned[key] || 0;
+  if (type === "daily" && Date.now() - last < 86400000)
+    return alert("⏳ ২৪ ঘণ্টায় একবার!");
+  addCoin(coin, key);
+  earned[key] = Date.now();
+  localStorage.setItem("earned", JSON.stringify(earned));
+}
+
+function addCoin(amount, source) {
+  let c = parseInt(localStorage.getItem("coin") || "0");
+  c += amount;
+  localStorage.setItem("coin", c);
+  updateTotalCoins();
+  let h = JSON.parse(localStorage.getItem("history") || "[]");
+  h.unshift(`${source} +${amount} coins (${new Date().toLocaleString()})`);
+  localStorage.setItem("history", JSON.stringify(h));
+  showHistory();
+}
+
+function updateTotalCoins() {
+  let c = parseInt(localStorage.getItem("coin") || "0");
+  gid("total-coins").innerText = c;
+  gid("total-coins2").innerText = c;
+}
+
+function showHistory() {
+  let h = JSON.parse(localStorage.getItem("history") || "[]");
+  gid("history").innerHTML = h.map(x => `<li>${x}</li>`).join('');
+}
+
+function requestWithdraw() {
+  let method = reg("method"), phone = reg("wphone"), amount = parseInt(reg("amount")), note = reg("wcomment");
+  let total = parseInt(localStorage.getItem("coin") || "0");
+  if (!phone || amount < 1000 || amount > total) return alert("⚠️ ভুল তথ্য!");
+  let msg = `Withdraw Request\n\nName: ${user.u}\nEmail: ${user.e}\nMethod: ${method}\nPhone: ${phone}\nAmount: ${amount}\nNote: ${note}\nPage: ${document.title}\nURL: ${location.href}`;
+  let link = `https://wa.me/8801715569959?text=${encodeURIComponent(msg)}`;
+  window.open(link);
+  let w = JSON.parse(localStorage.getItem("withdraw") || "[]");
+  w.unshift(`৳${amount} via ${method} (${new Date().toLocaleString()})`);
+  localStorage.setItem("withdraw", JSON.stringify(w));
+  showWithdrawHistory();
+}
+
+function showWithdrawHistory() {
+  let w = JSON.parse(localStorage.getItem("withdraw") || "[]");
+  gid("withdrawHistory").innerHTML = w.map(x => `<li>${x}</li>`).join('');
+}
+
+function redirectWithTimer(key, coin, url) {
+  let earned = JSON.parse(localStorage.getItem("earned") || "{}");
+  if (Date.now() - (earned[key] || 0) < 86400000) return alert("⏳ আজকে এই বাটন ক্লিক করা হয়েছে!");
+  localStorage.setItem("pendingKey", key);
+  localStorage.setItem("pendingCoin", coin);
+  localStorage.setItem("redirectBack", location.href);
+  location.href = `https://aveestb-bd.blogspot.com/p/preview_24.html?link=${encodeURIComponent(url)}&t=30`;
+}
+
+// ✅ Auto Preview System
+function startAutoPreview() {
+  previewIndex = 0;
+  goStep(5); // make sure previewStep is 5th .step
+  runPreview();
+}
+
+function runPreview() {
+  if (previewIndex >= previewLinks.length) {
+    addCoin(50, "AutoPreview");
+    alert("✅ Preview শেষ! ৫০ কয়েন অ্যাড হয়েছে!");
+    goStep(2);
+    return;
+  }
+  let frame = document.getElementById("previewFrame");
+  let timerEl = document.getElementById("previewTimer");
+  frame.src = previewLinks[previewIndex];
+  let sec = previewTime;
+  timerEl.innerText = sec;
+
+   const interval = setInterval(() => {
+    sec--;
+    timerEl.innerText = sec;
+    if (sec <= 0) {
+      clearInterval(interval);
+      addCoin(50, `Auto Preview ${previewIndex + 1}`);
+      previewIndex++;
+      runPreview(); // পরবর্তী লিংকে যাওয়া
+    }
+  }, 1000);
+}
+  
+  
+
+// ✅ Auto Login (If user already registered)
+window.onload = () => {
+  if (localStorage.getItem("user")) {
+    user = JSON.parse(localStorage.getItem("user"));
+    goStep(2);
+    updateTotalCoins();
+    showHistory();
+    showWithdrawHistory();
+  }
+};
+</script>
